@@ -3,7 +3,7 @@ layout: post
 title: "Beyond Top-K: Building search-confidence guardrails for agentic AI with OpenSearch"
 authors:
   - icpsingh
-  - shatakshi
+  - shatakp
 date: 2026-08-25
 categories:
   - technical-posts
