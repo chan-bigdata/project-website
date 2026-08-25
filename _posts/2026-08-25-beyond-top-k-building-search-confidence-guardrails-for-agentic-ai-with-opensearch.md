@@ -9,7 +9,7 @@ categories:
   - technical-posts
 meta_keywords: "agentic AI, OpenSearch confidence layer, hybrid search guardrails, retrieval abstention, search-confidence scoring, RAG safety, OpenSearch normalization processor, min_score hybrid query, agentic search OpenSearch, autonomous agent retrieval"
 meta_description: "Learn how to build a Confidence Layer on top of OpenSearch retrieval that lets agentic AI systems quantify trust, set adaptive thresholds, and abstain when results are not reliable enough to act on."
-excerpt: "Top-K retrieval always returns results—even when nothing relevant exists. This post introduces a Confidence Layer framework that gives agents the ability to say 'I'm not confident enough to act,' using OpenSearch primitives like normalization processors, min_score, script_score, and reranking via ML Commons."
+excerpt: "Top-K retrieval always returns results-even when nothing relevant exists. This post introduces a Confidence Layer framework that gives agents the ability to say 'I'm not confident enough to act,' using OpenSearch primitives like normalization processors, min_score, script_score, and reranking via ML Commons."
 ---
 
 Agentic AI has moved retrieval from a supporting role to a foundation. When an autonomous agent plans, reasons, and iteratively calls tools to answer a question, it depends on retrieval to supply relevant, timely, and complete context at every step. OpenSearch has invested heavily in making that retrieval better and more accessible to agents: [hybrid search](https://opensearch.org/blog/building-effective-hybrid-search-in-opensearch-techniques-and-best-practices/), native [agentic search](https://opensearch.org/blog/introducing-agentic-search-in-opensearch-transforming-data-interaction-through-natural-language/) (a conversational agent that plans tool use and generates query DSL from natural language, generally available since OpenSearch 3.2), the **Agentic Chat**, **Investigation Agent**, and **Agentic Memory** capabilities built into OpenSearch UI, and rigorous [relevance evaluation](https://opensearch.org/blog/evaluating-agentic-search-in-opensearch/).
@@ -72,7 +72,7 @@ RRF_score(d) = Σ 1 / (k + rank_i(d))     # k = 60 is a common smoothing constan
 
 ### 3. Reranking with a cross-encoder
 
-A cross-encoder rescores the top candidates using full query–document attention, producing more precise ordering as a second pass. OpenSearch supports this through the [rerank processor](https://docs.opensearch.org/latest/search-plugins/search-relevance/reranking-search-results/) via ML Commons:
+A cross-encoder rescores the top candidates using full query-document attention, producing more precise ordering as a second pass. OpenSearch supports this through the [rerank processor](https://docs.opensearch.org/latest/search-plugins/search-relevance/reranking-search-results/) via ML Commons:
 
 ```json
 "response_processors": [
@@ -112,7 +112,7 @@ None of these lets the agent conclude: "I'm not confident enough to act." That i
 
 The Confidence Layer sits between retrieval and action. It takes the (normalized) retrieval results and decides whether the agent should act, act with a caveat, seek clarification, escalate, or decline. It rests on three pillars.
 
-### Pillar 1: Quantify — multi-signal confidence scoring
+### Pillar 1: Quantify - multi-signal confidence scoring
 
 A single score can be misleading, so the Confidence Layer combines several signals into a composite confidence value:
 
@@ -163,7 +163,7 @@ POST /index/_search
 }
 ```
 
-### Pillar 2: Threshold — adaptive decision boundaries
+### Pillar 2: Threshold - adaptive decision boundaries
 
 A single static cutoff does not work across different kinds of requests. A confidence of 0.6 might be acceptable for an exploratory read but clearly insufficient for an irreversible bulk action. Thresholds should adapt to two factors:
 
@@ -209,7 +209,7 @@ def get_threshold(query_type, intent):
     return thresholds.get((query_type, intent), 0.75)
 ```
 
-### Pillar 3: Abstain — the graduated guardrail
+### Pillar 3: Abstain - the graduated guardrail
 
 Abstention is the actual guardrail: the point at which the agent declines to act. Rather than a binary act/refuse switch, a graduated response degrades gracefully based on how far confidence sits from the threshold:
 
@@ -229,7 +229,7 @@ def decide_action(confidence, threshold, results):
         return hard_abstain()                      # HARD ABSTAIN - decline to act
 ```
 
-This ladder—act → caveat → clarify → escalate → hard abstain—prevents cascading hallucinations at the source, because the agent stops before building further reasoning on a weak retrieval.
+This ladder-act, caveat, clarify, escalate, hard abstain-prevents cascading hallucinations at the source, because the agent stops before building further reasoning on a weak retrieval.
 
 ## Putting it together: the complete pipeline
 
@@ -257,21 +257,21 @@ We compare two configurations across five queries: a **basic** setup (hybrid sea
 
 | Query | Scenario | Basic (no guardrail) | With guardrail |
 |:---|:---|:---|:---|
-| "Show me the early termination clause for TechNova's lease" | Safe factual read | Returns the answer | **Act** — answers (confidence 0.85, margin +0.10) |
-| "Suspend all tenants who defaulted on rent in the last 3 months" | Dangerous bulk action | Suspends tenants including some with strong payment histories | **Escalate** — routes to a leasing manager for verification |
-| "Auto-close all resolved HVAC tickets from last quarter" | Bulk system action | Closes all 12 tickets, including 4 with pending follow-ups | **Caveat** — answers but flags the 4 tickets with pending follow-ups |
-| "Send a lease renewal offer to all tenants in buildings with good occupancy near downtown" | Vague bulk outreach | Sends legally binding offers based on undefined thresholds | **Clarify** — asks which occupancy percentage, which area, and whether to review the list first |
-| "What is the best restaurant near Times Square?" | Off-domain | Fabricates a recommendation from property amenities | **Hard abstain** — declines as out of domain |
+| "Show me the early termination clause for TechNova's lease" | Safe factual read | Returns the answer | **Act** - answers (confidence 0.85, margin +0.10) |
+| "Suspend all tenants who defaulted on rent in the last 3 months" | Dangerous bulk action | Suspends tenants including some with strong payment histories | **Escalate** - routes to a leasing manager for verification |
+| "Auto-close all resolved HVAC tickets from last quarter" | Bulk system action | Closes all 12 tickets, including 4 with pending follow-ups | **Caveat** - answers but flags the 4 tickets with pending follow-ups |
+| "Send a lease renewal offer to all tenants in buildings with good occupancy near downtown" | Vague bulk outreach | Sends legally binding offers based on undefined thresholds | **Clarify** - asks which occupancy percentage, which area, and whether to review the list first |
+| "What is the best restaurant near Times Square?" | Off-domain | Fabricates a recommendation from property amenities | **Hard abstain** - declines as out of domain |
 
-The pattern is consistent: without a confidence layer, the agent acts on every query, including the dangerous and the irrelevant. With one, its response degrades in proportion to how far confidence falls below threshold—caveat, clarify, escalate, or hard abstain, instead of a wrong answer delivered with full confidence.
+The pattern is consistent: without a confidence layer, the agent acts on every query, including the dangerous and the irrelevant. With one, its response degrades in proportion to how far confidence falls below threshold-caveat, clarify, escalate, or hard abstain, instead of a wrong answer delivered with full confidence.
 
 ## Key takeaways
 
 - Top-K retrieval is not sufficient for agentic AI, because it always returns results even when nothing relevant exists.
 - Better retrieval (hybrid search, RRF, reranking) improves ranking but does not provide an "I don't know" signal.
-- The Confidence Layer of Quantify → Threshold → Abstain fills the gap between retrieval and action.
+- The Confidence Layer of Quantify, Threshold, Abstain fills the gap between retrieval and action.
 - Thresholds should be query-type and intent-aware; a single static cutoff does not hold across query classes.
-- Graduated abstention (act → caveat → clarify → escalate → hard abstain) helps prevent cascading errors at the source.
+- Graduated abstention (act, caveat, clarify, escalate, hard abstain) helps prevent cascading errors at the source.
 - OpenSearch supports the building blocks natively: normalization processors, min_score for hybrid queries, script_score/function_score, agentic search, and reranking via ML Commons.
 
 ## Next steps
